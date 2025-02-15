@@ -29,9 +29,22 @@
 		736443842D6126A000DC2C37 /* IngredientSafeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IngredientSafeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		736443982D612B6500DC2C37 /* Exceptions for "IngredientSafe" folder in "IngredientSafe" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 736443692D61269F00DC2C37 /* IngredientSafe */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7364436C2D61269F00DC2C37 /* IngredientSafe */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				736443982D612B6500DC2C37 /* Exceptions for "IngredientSafe" folder in "IngredientSafe" target */,
+			);
 			path = IngredientSafe;
 			sourceTree = "<group>";
 		};
@@ -396,8 +409,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"IngredientSafe/Preview Content\"";
+				DEVELOPMENT_TEAM = W3C2QMMZ42;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = IngredientSafe/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Requires camera access to scan grocery items.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -424,8 +440,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"IngredientSafe/Preview Content\"";
+				DEVELOPMENT_TEAM = W3C2QMMZ42;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = IngredientSafe/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Requires camera access to scan grocery items.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
