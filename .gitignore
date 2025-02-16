@@ -5,3 +5,5 @@ Info.plist
 # Ignore build output
 DerivedData/
 *.xcworkspace
+
+pythonenv/
