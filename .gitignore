@@ -1,0 +1,7 @@
+# Ignore config files with sensitive info
+*.xcconfig
+Info.plist
+
+# Ignore build output
+DerivedData/
+*.xcworkspace
