@@ -84,7 +84,9 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
                 self.drawBoundingBoxes(filteredObservations)
                 for observation in filteredObservations {
                     if let topCandidate = observation.topCandidates(1).first {
-                        print("Detected text: \(topCandidate.string)")
+                        let scannedText = topCandidate.string
+                        print("Detected text: \(scannedText)")
+                        self.searchProductDatabase(for: scannedText)
                     }
                 }
             }
@@ -118,5 +120,44 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             height: boundingBox.height
         )
         return videoPreviewLayer.layerRectConverted(fromMetadataOutputRect: metadataRect)
+    }
+
+    func searchProductDatabase(for text: String) {
+        let query = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let urlString = "https://world.openfoodfacts.org/cgi/search.pl?search_terms=\(query)&search_simple=1&json=1"
+        
+        guard let url = URL(string: urlString) else { return }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("API Error: \(error)")
+                return
+            }
+            
+            guard let data = data else {
+                print("No data received from API")
+                return
+            }
+            
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                   let products = json["products"] as? [[String: Any]] {
+                    var resultString = ""
+                    for product in products.prefix(5) { // Limit to top 5 results
+                        if let productName = product["product_name"] as? String {
+                            resultString += "- \(productName)\n"
+                        }
+                    }
+                    
+                    DispatchQueue.main.async {
+                        print("API Call results for \(text):\n\(resultString)")
+                    }
+                } else {
+                    print("Invalid JSON structure")
+                }
+            } catch {
+                print("JSON parsing error: \(error)")
+            }
+        }.resume()
     }
 }
