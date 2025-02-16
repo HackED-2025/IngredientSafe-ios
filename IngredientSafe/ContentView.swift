@@ -87,23 +87,32 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     }
 
     func drawBoundingBoxes(_ observations: [VNRecognizedTextObservation]) {
-        boundingBoxLayer.sublayers?.forEach { $0.removeFromSuperlayer() } // Clear previous boxes
+        boundingBoxLayer.sublayers?.forEach { $0.removeFromSuperlayer() }
 
         for observation in observations {
             let boundingBox = observation.boundingBox
             let convertedBox = self.transformBoundingBox(boundingBox)
+            
             let boxLayer = CAShapeLayer()
-            boxLayer.frame = convertedBox
-            boxLayer.borderColor = UIColor.red.cgColor
-            boxLayer.borderWidth = 2.0
+            let path = UIBezierPath(rect: convertedBox)
+            boxLayer.path = path.cgPath
+            boxLayer.strokeColor = UIColor.red.cgColor
+            boxLayer.lineWidth = 2.0
+            boxLayer.fillColor = UIColor.clear.cgColor
             boundingBoxLayer.addSublayer(boxLayer)
         }
     }
 
     func transformBoundingBox(_ boundingBox: CGRect) -> CGRect {
-        let screenSize = view.bounds.size
-        let origin = CGPoint(x: boundingBox.minX * screenSize.width, y: (1 - boundingBox.maxY) * screenSize.height)
-        let size = CGSize(width: boundingBox.width * screenSize.width, height: boundingBox.height * screenSize.height)
-        return CGRect(origin: origin, size: size)
+        // Convert Vision coordinates (normalized, origin bottom-left) to metadata output coordinates (normalized, origin top-left)
+        let metadataRect = CGRect(
+            x: boundingBox.origin.x,
+            y: 1 - boundingBox.origin.y - boundingBox.height,
+            width: boundingBox.width,
+            height: boundingBox.height
+        )
+        
+        // Convert to layer coordinates using videoPreviewLayer's coordinate conversion
+        return videoPreviewLayer.layerRectConverted(fromMetadataOutputRect: metadataRect)
     }
 }
