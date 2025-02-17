@@ -7,8 +7,8 @@ import NaturalLanguage
 // MARK: - The SwiftUI wrapper
 struct CameraTextDetectionView: UIViewControllerRepresentable {
     /// Called when the OpenAI analysis is completed, passing the final text to SwiftUI
-    var onAnalysisCompleted: ((String) -> Void)
-    
+    var onAnalysisCompleted: (String, String) -> Void
+
     /// A binding so SwiftUI can request the controller to reset scanning
     @Binding var resetRequested: Bool
     
@@ -18,7 +18,11 @@ struct CameraTextDetectionView: UIViewControllerRepresentable {
     
     func makeUIViewController(context: Context) -> CameraTextDetectionViewController {
         let vc = CameraTextDetectionViewController()
-        vc.onAnalysisCompleted = onAnalysisCompleted
+        
+        // Provide the callback so the VC can call back up
+        vc.onAnalysisCompleted = { productName, rawGPTText in
+            onAnalysisCompleted(productName, rawGPTText)
+        }
         return vc
     }
 
@@ -43,8 +47,11 @@ struct CameraTextDetectionView: UIViewControllerRepresentable {
 class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
 
     // If you want to pass the final OpenAI text to SwiftUI
-    var onAnalysisCompleted: ((String) -> Void)?
+    var onAnalysisCompleted: ((String, String) -> Void)?
     
+    // MARK: - Product info
+    private var currentProductName: String?
+
     // MARK: - Camera Session
     var captureSession = AVCaptureSession()
     var videoPreviewLayer: AVCaptureVideoPreviewLayer!
@@ -307,6 +314,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
 
     // MARK: - 2) USDA Nutrition Details
     func fetchNutritionDetails(for foodId: String, productName: String) {
+        self.currentProductName = productName
         let detailUrlString = "https://api.nal.usda.gov/fdc/v1/food/\(foodId)?api_key=\(usdaApiKey ?? "")"
         guard let url = URL(string: detailUrlString) else {
             print("Invalid detail URL for USDA nutrition details")
@@ -349,8 +357,8 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     // MARK: - 3) OpenAI Analysis
     func analyzeWithOpenAI(nutritionData: [String: Any], productName: String) {
         guard let openAiApiKey = openAiApiKey, !openAiApiKey.isEmpty else {
-            print("OpenAI API key is missing; cannot proceed.")
-            return
+         print("OpenAI API key is missing; cannot proceed.")
+         return
         }
 
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
@@ -370,32 +378,31 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
         """
 
         let body: [String: Any] = [
-            "model": "gpt-4o-mini",
-            "messages": [
-                ["role": "system", "content": "You are helping me decide if a product is safe for my diet."],
-                ["role": "user",   "content": prompt]
-            ],
-            "max_tokens": 200
+         "model": "gpt-4o-mini",
+         "messages": [
+             ["role": "system", "content": "You are helping me decide if a product is safe for my diet."],
+             ["role": "user",   "content": prompt]
+         ],
+         "max_tokens": 200
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
         URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("OpenAI API error: \(error.localizedDescription)")
-                return
-            }
-            guard let data = data else {
-                print("No data from OpenAI")
-                return
-            }
+         if let error = error {
+             print("OpenAI API error: \(error.localizedDescription)")
+             return
+         }
+         guard let data = data else {
+             print("No data from OpenAI")
+             return
+         }
 
-            // Example: just turn the raw JSON or text into a string
-            let rawResponse = String(data: data, encoding: .utf8) ?? "No response"
-
-            DispatchQueue.main.async {
-                // Pass the entire response back up to SwiftUI
-                self.onAnalysisCompleted?(rawResponse)
-            }
+         let rawGPTText = String(data: data, encoding: .utf8) ?? "No response"
+         
+         DispatchQueue.main.async {
+             // Pass productName + GPT text to SwiftUI
+             self.onAnalysisCompleted?(productName, rawGPTText)
+         }
         }.resume()
     }
 

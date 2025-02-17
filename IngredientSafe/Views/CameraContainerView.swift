@@ -2,32 +2,33 @@ import SwiftUI
 
 struct CameraContainerView: View {
     @Environment(\.presentationMode) var presentationMode
-    
-    // Tracks whether we should show the full-screen overlay
+
+    // Overlay control
     @State private var showOverlay = false
-    
-    // Holds the text or message returned by OpenAI
-    @State private var overlayText: String = ""
-    
-    // When set to true, we'll tell the VC to reset scanning
+
+    // We'll store the raw GPT text separately from the product name
+    @State private var overlayGPTText: String = ""
+    @State private var overlayProductName: String = ""
+
+    // To reset scanning after dismiss
     @State private var resetScanRequested = false
-    
+
     var body: some View {
         ZStack {
-            // Our camera view
+            // 1) Camera
             CameraTextDetectionView(
-                // This closure is called when analysis is done
-                onAnalysisCompleted: { openAIResponse in
-                    // Store the result in local state
-                    self.overlayText = openAIResponse
-                    // Show the overlay
+                onAnalysisCompleted: { productName, rawGPTText in
+                    // Save to local state
+                    self.overlayProductName = productName
+                    self.overlayGPTText = rawGPTText
+                    // Show overlay
                     self.showOverlay = true
                 },
-                // A binding so we can request a reset
                 resetRequested: $resetScanRequested
             )
             .edgesIgnoringSafeArea(.all)
 
+            // 2) Floating instructions
             VStack {
                 Text("Scan a product label within the box.")
                     .foregroundColor(.white)
@@ -35,51 +36,26 @@ struct CameraContainerView: View {
                 Spacer()
             }
         }
-        // Full‐screen overlay that covers the camera
+        // 3) Full‐screen overlay
         .overlay(
             Group {
                 if showOverlay {
-                    ZStack {
-                        // Dark background
-                        Color.black.opacity(0.8)
-                            .edgesIgnoringSafeArea(.all)
+                    // Parse rating & bullets from the GPT text
+                    let parsed = parseOpenAIResponse(overlayGPTText)
+                    
+                    AnalysisView (
+                        productName: overlayProductName,
+                        rating: parsed.rating,
+                        bulletLines: parsed.bulletLines
+                    ) {
+                        // Called when user taps "Dismiss"
+                        showOverlay = false
+                        resetScanRequested = true
                         
-                        // Example of a basic overlay layout
-                        VStack(spacing: 16) {
-                            Text("Analysis Result")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                            
-                            ScrollView {
-                                Text(overlayText)
-                                    .foregroundColor(.white)
-                                    .padding()
-                            }
-                            
-                            Button(action: {
-                                // Dismiss the overlay
-                                showOverlay = false
-                                
-                                // Request that the camera resets scanning
-                                resetScanRequested = true
-                                
-                                // Once the representable sees our request, it’ll call
-                                // resetScan() in the UIViewController, so scanning restarts.
-                                // Then we clear the flag so it won't keep toggling.
-                                DispatchQueue.main.async {
-                                    resetScanRequested = false
-                                }
-                            }) {
-                                Text("Dismiss")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .padding()
-                                    .frame(width: 120)
-                                    .background(Color.green)
-                                    .cornerRadius(8)
-                            }
+                        // Clear the request after setting
+                        DispatchQueue.main.async {
+                            resetScanRequested = false
                         }
-                        .padding()
                     }
                 }
             }
@@ -95,6 +71,32 @@ struct CameraContainerView: View {
             Text("Back")
                 .foregroundColor(Theme.accentGreen)
         })
+    }
+}
+
+// MARK: - Parsing
+extension CameraContainerView {
+    /// Given the raw GPT text (e.g. "2\n- Contains dairy...\n- High sugar..."),
+    /// extract a numeric rating + bullet lines.
+    func parseOpenAIResponse(_ raw: String) -> (rating: Int, bulletLines: [String]) {
+        // Split by newline
+        var lines = raw
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        
+        // Attempt to parse the first line as an integer rating
+        guard let firstLine = lines.first,
+              let rating = Int(firstLine) else {
+            // If we can't parse the rating, default to 0
+            return (0, lines)
+        }
+        
+        // If parsed rating is valid, remove that line from bullet lines
+        lines.removeFirst()
+        let bulletLines = lines
+        
+        return (rating, bulletLines)
     }
 }
 
