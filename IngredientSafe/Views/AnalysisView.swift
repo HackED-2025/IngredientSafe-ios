@@ -6,11 +6,12 @@ struct AnalysisView: View {
     let rating: Int
     let bulletLines: [String]
     let onDismiss: () -> Void
+    
+    @EnvironmentObject var favoritesModel: FavoritesModel
 
     var body: some View {
         ZStack {
-            // Dark background
-            Color.black.opacity(0.8)
+            Theme.backgroundColor
                 .edgesIgnoringSafeArea(.all)
 
             // The "card" with rating & bullet lines
@@ -35,7 +36,20 @@ struct AnalysisView: View {
                     .padding(.horizontal)
                 }
 
-                // 4) Dismiss button
+                // 4) Add to Favorites Button
+                Button(action: addToFavorites) {
+                    Text("Add to Favorites")
+                        .foregroundColor(.white)
+                        .font(Theme.font)
+                        .padding()
+                        .frame(width: 200, height: 40)
+                        .background(Theme.accentGreen)
+                        .cornerRadius(8)
+                        .shadow(color: .gray.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+                .padding(.top, 16)
+
+                // 5) Dismiss button
                 Button(action: onDismiss) {
                     Text("Dismiss")
                         .foregroundColor(.white)
@@ -93,5 +107,12 @@ struct AnalysisView: View {
             Text(text)
                 .foregroundColor(.gray)
         }
+    }
+
+    /// Function to add product to favorites
+    private func addToFavorites() {
+        let product = Product(id: UUID().uuidString, name: productName, description: bulletLines.joined(separator: ", "))
+        favoritesModel.addFavorite(product)
+        print("\(productName) added to favorites")
     }
 }

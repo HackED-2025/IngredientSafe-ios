@@ -16,6 +16,8 @@ struct ContentView: View {
                             PreferencesView()
                         case .signUp:
                             SignUpView()
+                        case .favorites:
+                            FavoritesView()
                         }
                     }
             } else {
@@ -37,6 +39,7 @@ enum Destination: Hashable {
     case camera
     case preferences
     case signUp
+    case favorites
 }
 
 struct ContentView_Previews: PreviewProvider {
@@ -44,5 +47,6 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
             .environmentObject(AuthViewModel())
             .environmentObject(PreferencesModel())
+            .environmentObject(FavoritesModel())
     }
 }

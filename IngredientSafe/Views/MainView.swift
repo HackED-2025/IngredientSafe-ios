@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainView: View {
     @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var favoritesModel: FavoritesModel
 
     var body: some View {
         ZStack {
@@ -45,6 +46,17 @@ struct MainView: View {
                             .clipShape(Theme.buttonShape)
                             .shadow(color: .gray.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
+                    
+                    NavigationLink(value: Destination.favorites) {
+                        Text("View Favorites")
+                            .foregroundColor(.white)
+                            .font(Theme.font)
+                            .frame(width: 320, height: 60)
+                            .background(Theme.accentGreen)
+                            .clipShape(Theme.buttonShape)
+                            .shadow(color: .gray.opacity(0.3), radius: 8, x: 0, y: 4)
+                    }
+                    
                 }
                 
                 Spacer()
