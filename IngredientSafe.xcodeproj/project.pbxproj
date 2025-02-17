@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		736443AD2D62AD3400DC2C37 /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 736443AC2D62AD3400DC2C37 /* Secrets.xcconfig */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		7364437B2D6126A000DC2C37 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		7364436A2D61269F00DC2C37 /* IngredientSafe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IngredientSafe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7364437A2D6126A000DC2C37 /* IngredientSafeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IngredientSafeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		736443842D6126A000DC2C37 /* IngredientSafeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IngredientSafeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		736443AC2D62AD3400DC2C37 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -88,6 +93,7 @@
 		736443612D61269F00DC2C37 = {
 			isa = PBXGroup;
 			children = (
+				736443AC2D62AD3400DC2C37 /* Secrets.xcconfig */,
 				7364436C2D61269F00DC2C37 /* IngredientSafe */,
 				7364437D2D6126A000DC2C37 /* IngredientSafeTests */,
 				736443872D6126A000DC2C37 /* IngredientSafeUITests */,
@@ -225,6 +231,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				736443AD2D62AD3400DC2C37 /* Secrets.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -284,6 +291,7 @@
 /* Begin XCBuildConfiguration section */
 		7364438C2D6126A000DC2C37 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 736443AC2D62AD3400DC2C37 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -347,6 +355,7 @@
 		};
 		7364438D2D6126A000DC2C37 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 736443AC2D62AD3400DC2C37 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -403,6 +412,7 @@
 		};
 		7364438F2D6126A000DC2C37 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 736443AC2D62AD3400DC2C37 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -434,6 +444,7 @@
 		};
 		736443902D6126A000DC2C37 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 736443AC2D62AD3400DC2C37 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;

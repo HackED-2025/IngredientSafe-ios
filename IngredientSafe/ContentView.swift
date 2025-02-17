@@ -142,7 +142,6 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     }
 
     func searchProductDatabase(for text: String) {
-        let apiKey = Bundle.main.object(forInfoDictionaryKey: "USDA_API_KEY") as? String ?? ""
         let query = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let urlString = "https://api.nal.usda.gov/fdc/v1/foods/search?query=\(query)&pageSize=5&api_key=\(apiKey ?? "")"
         
