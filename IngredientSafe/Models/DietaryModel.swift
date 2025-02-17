@@ -14,10 +14,14 @@ struct DietPreference: Identifiable {
 
 class PreferencesModel: ObservableObject {
     @Published var preferences: [DietPreference] = [
-        DietPreference(title: "Diabetes", isSelected: false),
+        DietPreference(title: "Diabetes", isSelected: true),
         DietPreference(title: "Celiacs", isSelected: false),
         DietPreference(title: "Halal", isSelected: false),
-        DietPreference(title: "Peanuts Allergy", isSelected: false)
+        DietPreference(title: "Peanuts Allergy", isSelected: false),
+        DietPreference(title: "Shellfish Allergy", isSelected: false),
+        DietPreference(title: "Soy Allergy", isSelected: false),
+        DietPreference(title: "Low sugar preference", isSelected: false),
+        DietPreference(title: "Vegan", isSelected: false),
     ]
 
     /// Add a brand new preference, defaulting to not selected
