@@ -6,6 +6,8 @@ import NaturalLanguage
 
 // MARK: - The SwiftUI wrapper
 struct CameraTextDetectionView: UIViewControllerRepresentable {
+    @EnvironmentObject var preferencesModel: PreferencesModel
+    
     /// Called when the OpenAI analysis is completed, passing the final text to SwiftUI
     var onAnalysisCompleted: (String, String) -> Void
     
@@ -23,6 +25,10 @@ struct CameraTextDetectionView: UIViewControllerRepresentable {
         vc.onAnalysisCompleted = { productName, rawGPTText in
             onAnalysisCompleted(productName, rawGPTText)
         }
+        
+        // Pass the PreferencesModel to the controller:
+        vc.preferencesModel = preferencesModel
+        
         return vc
     }
     
@@ -43,11 +49,12 @@ struct CameraTextDetectionView: UIViewControllerRepresentable {
     }
 }
 
+
 // MARK: - The main UIViewController with OCR + API logic
 class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     
-    // If you want to pass the final OpenAI text to SwiftUI
-    var onAnalysisCompleted: ((String, String) -> Void)?
+    var preferencesModel: PreferencesModel?
+    var onAnalysisCompleted: ((String, String) -> Void)? // Callback for processing + outputting API text to screen
     
     // MARK: - Product info
     private var currentProductName: String?
@@ -361,22 +368,24 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             return
         }
         
+        // Build a dynamic string from selected preferences
+        let userPrefs = buildUserPreferenceString()
+        
         let url = URL(string: "https://api.openai.com/v1/chat/completions")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(openAiApiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        // Example prompt
-        let preferences = "User dietary preferences: Celiacs Disease, low-sugar, no dairy."
+
+        // Now embed them into the prompt
         let prompt = """
-        I have the following dietary restrictions: {user selected conditions}. Rank the product on how safe or nutritious it is for me to eat.
+        I have the following dietary restrictions: \(userPrefs).
+        Rank the product on how safe or nutritious it is for me to eat.
         Product: \(productName)
         Nutrition: \(nutritionData)
-        Preferences: \(preferences)
-        Return an integer from 1-10 on a single line ranking the product safety, followed by a newline, and then a short bulleted list describing concisely on each bullet what ingredient/macronutrient caused the score to be good/bad. Order these bullets from most critical to least critical.
+        Return an integer from 1-10 on a single line ranking the product safety, followed by bullet points.
         """
-        
+
         let body: [String: Any] = [
             "model": "gpt-4o-mini",
             "messages": [
@@ -386,7 +395,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             "max_tokens": 200
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        
+
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
                 print("OpenAI API error: \(error.localizedDescription)")
@@ -422,6 +431,24 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             }
         }.resume()
     }
+    
+    private func buildUserPreferenceString() -> String {
+        guard let model = preferencesModel else {
+            return "No restrictions specified"
+        }
+        // Get all selected preferences
+        let active = model.preferences
+            .filter { $0.isSelected }
+            .map { $0.title }
+
+        if active.isEmpty {
+            return "No specific restrictions selected"
+        } else {
+            return active.joined(separator: ", ")
+        }
+    }
+
+
     
     struct OpenAIResponse: Decodable {
         let choices: [Choice]
