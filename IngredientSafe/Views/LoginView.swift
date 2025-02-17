@@ -6,29 +6,25 @@ struct LoginView: View {
     @State private var password = ""
     @State private var loginFailed = false
 
-    // Example brand colors; tweak these as needed.
-    private let backgroundColor = Color(red: 0.95, green: 0.98, blue: 1.0) // Light pastel
-    private let accentGreen = Color(red: 0.27, green: 0.65, blue: 0.44)   // Approx. #44A36F
-
     var body: some View {
         ZStack {
             // 1) Background
-            backgroundColor
+            Theme.backgroundColor
                 .ignoresSafeArea()
 
             VStack(spacing: 30) {
                 
                 // 2) Brand / Header
                 VStack(spacing: 8) {
-                    Image(systemName: "camera.fill")
+                    Image(systemName: "takeoutbag.and.cup.and.straw.fill")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 60, height: 60)
-                        .foregroundColor(accentGreen)
+                        .foregroundColor(Theme.accentGreen)
                     
                     Text("INGREDIA")
                         .font(.system(size: 32, weight: .semibold))
-                        .foregroundColor(accentGreen)
+                        .foregroundColor(Theme.accentGreen)
                     
                     Text("Please log in to continue")
                         .foregroundColor(.gray)
@@ -65,20 +61,20 @@ struct LoginView: View {
                     Button(action: handleLogin) {
                         Text("Login")
                             .foregroundColor(.white)
-                            .font(.headline)
+                            .font(Theme.font)
                             .frame(width: 200, height: 40)
-                            .background(accentGreen)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .background(Theme.accentGreen)
+                            .clipShape(Theme.buttonShape)
                             .shadow(color: .gray.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
                     
                     NavigationLink(destination: SignUpView()) {
                         Text("Sign Up")
                             .foregroundColor(.white)
-                            .font(.headline)
+                            .font(Theme.font)
                             .frame(width: 200, height: 40)
-                            .background(accentGreen)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .background(Theme.accentGreen)
+                            .clipShape(Theme.buttonShape)
                             .shadow(color: .gray.opacity(0.3), radius: 8, x: 0, y: 4)
                     }
                 }
