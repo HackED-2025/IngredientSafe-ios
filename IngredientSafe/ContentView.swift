@@ -29,6 +29,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     let scanHeight = 0.5
     
     var apiKey: String!
+    var waitingForAPIResponse: Bool = false
     
     
     var scanTimer: Timer?
@@ -92,6 +93,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         guard scanForText else { return } // Skip processing if timer not triggered yet
+        guard !waitingForAPIResponse else { return }
         scanForText = false // Reset after triggering
         
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
@@ -142,6 +144,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     }
 
     func searchProductDatabase(for text: String) {
+        waitingForAPIResponse = true
         let query = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let urlString = "https://api.nal.usda.gov/fdc/v1/foods/search?query=\(query)&pageSize=5&api_key=\(apiKey ?? "")"
         
@@ -151,6 +154,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
         }
         
         URLSession.shared.dataTask(with: url) { data, response, error in
+            defer { DispatchQueue.main.async { self.waitingForAPIResponse = false }}
             if let error = error {
                 print("API Error: \(error.localizedDescription)")
                 return
