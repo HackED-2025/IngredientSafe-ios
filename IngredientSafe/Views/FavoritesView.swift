@@ -23,6 +23,7 @@ struct FavoritesView: View {
                         .font(.system(size: 32, weight: .semibold))
                         .foregroundColor(Theme.accentGreen)
                 }
+                .frame(maxWidth: .infinity)
 
                 // Main List of Favorite Products
                 ScrollView {
