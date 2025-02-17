@@ -40,6 +40,8 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     // MARK: - Scanning/State
     var waitingForAPIResponse: Bool = false
     var scanForText = true
+    private var hasFoundProduct = false
+
     var scanTimer: Timer?
 
     let similarityThreshold: Double = 0.3
@@ -180,7 +182,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
                     .compactMap { $0.topCandidates(1).first?.string }
                     .joined(separator: " ")
 
-                if !allText.isEmpty {
+                if !allText.isEmpty && !self.hasFoundProduct {
                     self.searchProductDatabase(for: allText)
                 }
             }
@@ -266,7 +268,10 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
                     if let match = bestMatch,
                        let matchedFood = foods.first(where: { ($0["description"] as? String) == match }),
                        let foodId = matchedFood["fdcId"] as? Int {
-
+                        
+                        // Prevent further scanning
+                        self.hasFoundProduct = true
+                        
                         // Step 2: fetch detailed nutrition info
                         self.fetchNutritionDetails(for: String(foodId), productName: match)
                     } else {
@@ -282,6 +287,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
 
     // MARK: - 2) USDA Nutrition Details
     func fetchNutritionDetails(for foodId: String, productName: String) {
+        print("Food match: \(productName)")
         let detailUrlString = "https://api.nal.usda.gov/fdc/v1/food/\(foodId)?api_key=\(usdaApiKey ?? "")"
         guard let url = URL(string: detailUrlString) else {
             print("Invalid detail URL for USDA nutrition details")
