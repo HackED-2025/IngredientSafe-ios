@@ -158,10 +158,42 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
         return videoPreviewLayer.layerRectConverted(fromMetadataOutputRect: metadataRect)
     }
     
+    func fetchNutritionDetails(for foodId: String) {
+        let detailUrlString = "https://api.nal.usda.gov/fdc/v1/food/\(foodId)?api_key=\(apiKey ?? "")"
+        guard let url = URL(string: detailUrlString) else {
+            print("Invalid URL for nutrition details")
+            return
+        }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                print("Error fetching nutrition details: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let data = data else {
+                print("No data received for nutrition details")
+                return
+            }
+            
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+                if let nutritionData = json as? [String: Any] {
+                    print("Nutrition Details: \(nutritionData)")
+                } else {
+                    print("Invalid JSON structure for nutrition details")
+                }
+            } catch {
+                print("Error parsing nutrition details JSON: \(error.localizedDescription)")
+            }
+        }.resume()
+    }
+
+    // Modify `searchProductDatabase` to call `fetchNutritionDetails` after best match
     func searchProductDatabase(for text: String) {
         waitingForAPIResponse = true
         let query = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let urlString = "https://api.nal.usda.gov/fdc/v1/foods/search?query=\(query)type=Branded&pageSize=5&api_key=\(apiKey ?? "")"
+        let urlString = "https://api.nal.usda.gov/fdc/v1/foods/search?query=\(query)&dataType=Branded&pageSize=5&api_key=\(apiKey ?? "")"
         
         guard let url = URL(string: urlString) else { print("Invalid URL: \(urlString)"); return }
         
@@ -180,6 +212,10 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
                     DispatchQueue.main.async {
                         if let match = bestMatch {
                             print("Best match found: \(match)")
+                            if let matchedFood = foods.first(where: { ($0["description"] as? String) == match }),
+                               let foodId = matchedFood["fdcId"] as? Int {
+                                self.fetchNutritionDetails(for: String(foodId))
+                            }
                         } else {
                             print("No match found")
                         }
@@ -235,7 +271,6 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             let productTokens = processedProduct.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
             
             // -- Jaccard similarity on sets of tokens --
-            // If you want exact matching only:
             let textSet = Set(textTokens)
             let productSet = Set(productTokens)
             
@@ -243,11 +278,6 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             let unionCount = textSet.union(productSet).count
             // Avoid divide-by-zero
             let jaccardScore = unionCount > 0 ? Double(intersectionCount) / Double(unionCount) : 0.0
-            
-            
-             // -- OPTIONAL: Hybrid approach with token-level fuzzy matching --
-//              1. For each token in textTokens, find best fuzzy match in productTokens
-//              2. Count a match if similarity > 0.7 (example)
              
             var matchedCount = 0
             for t in textTokens {
