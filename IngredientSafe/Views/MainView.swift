@@ -21,10 +21,6 @@ struct MainView: View {
                     Text("INGREDIA")
                         .font(.system(size: 32, weight: .semibold))
                         .foregroundColor(Theme.accentGreen)
-                    
-                    Text("Hello, \(authVM.currentUser?.email ?? "User")!")
-                        .font(.title)
-                        .foregroundColor(.gray)
                 }
                 .padding(.top, 50)
                 
