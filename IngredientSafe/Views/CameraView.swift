@@ -247,9 +247,9 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             let boxLayer = CAShapeLayer()
             let path = UIBezierPath(rect: converted)
             boxLayer.path = path.cgPath
-            boxLayer.strokeColor = UIColor.red.cgColor
+            boxLayer.strokeColor = UIColor.clear.cgColor
             boxLayer.lineWidth = 2.0
-            boxLayer.fillColor = UIColor.clear.cgColor
+            boxLayer.fillColor = Color(red: 0.8, green: 1.0, blue: 0.8).opacity(0.4).cgColor
             boundingBoxLayer.addSublayer(boxLayer)
         }
     }
