@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct PreferencesView: View {
-    @EnvironmentObject var preferences: PreferencesModel
+    @EnvironmentObject var preferencesModel: PreferencesModel
     @State private var customRestrictionInput: String = ""
     
     var body: some View {
@@ -12,7 +12,7 @@ struct PreferencesView: View {
             
             // Show each known preference with a toggle
             List {
-                ForEach($preferences.preferences) { $pref in
+                ForEach($preferencesModel.preferences) { $pref in
                     Toggle(pref.title, isOn: $pref.isSelected)
                 }
             }
@@ -22,7 +22,7 @@ struct PreferencesView: View {
             Text("Custom Restrictions:")
                 .font(.headline)
             // Show existing custom restrictions
-            ForEach(preferences.customRestrictions, id: \.self) { restriction in
+            ForEach(preferencesModel.customRestrictions, id: \.self) { restriction in
                 Text("• \(restriction)")
             }
             
@@ -31,7 +31,7 @@ struct PreferencesView: View {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 Button("Add") {
                     if !customRestrictionInput.isEmpty {
-                        preferences.addCustomRestriction(customRestrictionInput)
+                        preferencesModel.addCustomRestriction(customRestrictionInput)
                         customRestrictionInput = ""
                     }
                 }

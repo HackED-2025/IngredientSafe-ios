@@ -1,19 +1,29 @@
 import SwiftUI
 
 struct ContentView: View {
-    // We keep an instance of AuthViewModel and PreferencesModel in the environment
-    @StateObject var authVM = AuthViewModel()
-    @StateObject var preferences = PreferencesModel()
-    
+    @EnvironmentObject var authVM: AuthViewModel
+    @State private var navigationPath = NavigationPath()
+
     var body: some View {
-        NavigationView {
-            if authVM.currentUser == nil {
-                // Show login flow if no user
-                LoginView()
-            } else {
-                // Show main content if logged in
+        NavigationStack(path: $navigationPath) {
+            if authVM.currentUser != nil {
                 MainView()
+                    .navigationDestination(for: Destination.self) { destination in
+                        switch destination {
+                        case .camera:
+                            CameraContainerView()
+                        case .preferences:
+                            PreferencesView()
+                        }
+                    }
+            } else {
+                LoginView()
             }
         }
     }
+}
+
+enum Destination: Hashable {
+    case camera
+    case preferences
 }

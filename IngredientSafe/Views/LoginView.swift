@@ -32,7 +32,14 @@ struct LoginView: View {
             HStack {
                 Button("Login") {
                     let success = authVM.login(email: email, password: password)
-                    if !success {
+                    if success {
+                        // Navigate to MainView upon successful login
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let window = windowScene.windows.first {
+                            window.rootViewController = UIHostingController(rootView: ContentView().environmentObject(authVM))
+                            window.makeKeyAndVisible()
+                        }
+                    } else {
                         loginFailed = true
                     }
                 }

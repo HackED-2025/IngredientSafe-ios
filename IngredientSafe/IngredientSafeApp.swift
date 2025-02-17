@@ -9,12 +9,14 @@ import SwiftUI
 
 @main
 struct IngredientSafeApp: App {
-    @StateObject var authVM = AuthViewModel() 
+    @StateObject var authVM = AuthViewModel()
+    @StateObject var preferencesModel = PreferencesModel()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(authVM)
+                .environmentObject(preferencesModel)
         }
     }
 }
