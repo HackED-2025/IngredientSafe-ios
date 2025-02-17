@@ -1,7 +1,6 @@
 import SwiftUI
 import AVFoundation
 import Vision
-import CoreML
 import NaturalLanguage
 
 
@@ -194,48 +193,90 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
         }.resume()
     }
     
+    func levenshteinDistance(_ s1: String, _ s2: String) -> Int {
+        let (t, u) = (Array(s1), Array(s2))
+        let empty = [Int](repeating: 0, count: u.count + 1)
+        var last = [Int](0...u.count)
+        
+        for i in 1...t.count {
+            var cur = [i] + empty[1...]
+            for j in 1...u.count {
+                cur[j] = t[i - 1] == u[j - 1]
+                    ? last[j - 1]
+                    : Swift.min(last[j], cur[j - 1], last[j - 1]) + 1
+            }
+            last = cur
+        }
+        return last.last!
+    }
+
+    func tokenSimilarity(_ s1: String, _ s2: String) -> Double {
+        // Scale Levenshtein distance into a [0..1] similarity:
+        let dist = Double(levenshteinDistance(s1, s2))
+        let maxLen = Double(max(s1.count, s2.count))
+        // e.g.: 1.0 - (dist / maxLen)
+        return 1.0 - (dist / maxLen)
+    }
+
+    
     func findBestMatch(for text: String, in productNames: [String]) -> String? {
+        // Preprocess the user-detected text
         let processedText = text.preprocessText()
+        let textTokens = processedText.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        
         var bestMatch: String? = nil
         var highestScore: Double = 0.0
         
         print("Detected text (processed): \(processedText)")
-
-        let textWords = processedText.components(separatedBy: .whitespaces)
-
+        
         for product in productNames {
+            // Preprocess the product name
             let processedProduct = product.preprocessText()
-            let productWords = processedProduct.components(separatedBy: .whitespaces)
-
-            var totalSimilarity: Double = 0
-            var comparisons: Int = 0
-
-            // Compare consecutive word sequences of varying lengths
-            for length in 1...min(textWords.count, productWords.count) {
-                for i in 0...(textWords.count - length) {
-                    let textSequence = textWords[i..<(i+length)].joined(separator: " ")
-                    for j in 0...(productWords.count - length) {
-                        let productSequence = productWords[j..<(j+length)].joined(separator: " ")
-                        let distance = NLEmbedding.wordEmbedding(for: .english)?.distance(between: textSequence, and: productSequence) ?? 2.0
-                        let similarity = 1.0 - (distance / 2.0)
-
-                        // Weigh longer sequences more heavily
-                        let weightedSimilarity = similarity * Double(length)
-                        totalSimilarity += weightedSimilarity
-                        comparisons += 1
-                    }
-                }
+            let productTokens = processedProduct.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+            
+            // -- Jaccard similarity on sets of tokens --
+            // If you want exact matching only:
+            let textSet = Set(textTokens)
+            let productSet = Set(productTokens)
+            
+            let intersectionCount = textSet.intersection(productSet).count
+            let unionCount = textSet.union(productSet).count
+            // Avoid divide-by-zero
+            let jaccardScore = unionCount > 0 ? Double(intersectionCount) / Double(unionCount) : 0.0
+            
+            
+             // -- OPTIONAL: Hybrid approach with token-level fuzzy matching --
+//              1. For each token in textTokens, find best fuzzy match in productTokens
+//              2. Count a match if similarity > 0.7 (example)
+             
+            var matchedCount = 0
+            for t in textTokens {
+              var bestLocal = 0.0
+              for p in productTokens {
+                  let sim = tokenSimilarity(t, p) // from Levenshtein
+                  if sim > bestLocal { bestLocal = sim }
+              }
+              // If bestLocal > 0.7, consider it a "match"
+              if bestLocal > 0.7 { matchedCount += 1 }
             }
-
-            let score = comparisons > 0 ? (totalSimilarity / Double(comparisons)) : 0
-            print("Comparing to: \(processedProduct) | Score: \(score)")
-
-            if score > highestScore && score >= similarityThreshold {
-                highestScore = score
+            let fuzzyScore = Double(matchedCount) / Double(textTokens.count)
+            let finalScore = (jaccardScore + fuzzyScore) / 2.0
+            let scoreToUse = finalScore
+            
+            print("Comparing to: \(processedProduct) | Jaccard score: \(scoreToUse)")
+            
+            // Track best match
+            if scoreToUse > highestScore {
+                highestScore = scoreToUse
                 bestMatch = product
             }
         }
-
-        return bestMatch
+        
+        // Only return the best match if above your threshold
+        if highestScore >= similarityThreshold {
+            return bestMatch
+        } else {
+            return nil
+        }
     }
 }
