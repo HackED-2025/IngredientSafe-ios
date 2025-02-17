@@ -27,10 +27,18 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     let scanY = 0.25
     let scanWidth = 0.5
     let scanHeight = 0.5
-
+    
+    var apiKey: String!
+    
+    
+    var scanTimer: Timer?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCamera()
+        startScanTimer()
+        apiKey = Bundle.main.object(forInfoDictionaryKey: "USDA_API_KEY") as? String
+
     }
 
     func setupCamera() {
@@ -58,9 +66,17 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             DispatchQueue.global(qos: .background).async {
                 self.captureSession.startRunning()
             }
-        } catch { print("Error setting up camera: \\(error)") }
+        } catch { print("Error setting up camera: \(error)") }
     }
-
+    
+    func startScanTimer() {
+        scanTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            self.scanForText = true
+        }
+    }
+    
+    var scanForText = false
+    
     func addOverlayLayer() {
         let path = UIBezierPath(rect: view.bounds)
         let centerRect = CGRect(x: view.bounds.width * scanX, y: view.bounds.height * scanY, width: view.bounds.width * scanWidth, height: view.bounds.height * scanHeight)
@@ -75,6 +91,9 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        guard scanForText else { return } // Skip processing if timer not triggered yet
+        scanForText = false // Reset after triggering
+        
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let request = VNRecognizeTextRequest { (request, error) in
             guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
@@ -123,15 +142,26 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     }
 
     func searchProductDatabase(for text: String) {
+        let apiKey = Bundle.main.object(forInfoDictionaryKey: "USDA_API_KEY") as? String ?? ""
         let query = text.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let urlString = "https://world.openfoodfacts.org/cgi/search.pl?search_terms=\(query)&search_simple=1&json=1"
+        let urlString = "https://api.nal.usda.gov/fdc/v1/foods/search?query=\(query)&pageSize=5&api_key=\(apiKey ?? "")"
         
-        guard let url = URL(string: urlString) else { return }
+        guard let url = URL(string: urlString) else {
+            print("Invalid URL: \(urlString)")
+            return
+        }
         
         URLSession.shared.dataTask(with: url) { data, response, error in
             if let error = error {
-                print("API Error: \(error)")
+                print("API Error: \(error.localizedDescription)")
                 return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                print("HTTP Status Code: \(httpResponse.statusCode)")
+                if httpResponse.statusCode != 200 {
+                    print("HTTP Response Headers: \(httpResponse.allHeaderFields)")
+                }
             }
             
             guard let data = data else {
@@ -140,23 +170,27 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             }
             
             do {
-                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                   let products = json["products"] as? [[String: Any]] {
-                    var resultString = ""
-                    for product in products.prefix(5) { // Limit to top 5 results
-                        if let productName = product["product_name"] as? String {
-                            resultString += "- \(productName)\n"
+                let json = try JSONSerialization.jsonObject(with: data, options: [])
+                
+                if let jsonDict = json as? [String: Any] {
+                    if let foods = jsonDict["foods"] as? [[String: Any]] {
+                        var resultString = ""
+                        for food in foods {
+                            if let description = food["description"] as? String {
+                                resultString += "- \(description)\n"
+                            }
                         }
-                    }
-                    
-                    DispatchQueue.main.async {
-                        print("API Call results for \(text):\n\(resultString)")
+                        DispatchQueue.main.async {
+                            print("API Call results for \(text):\n\(resultString)")
+                        }
+                    } else {
+                        print("Missing or invalid 'foods' key in JSON: \(jsonDict)")
                     }
                 } else {
-                    print("Invalid JSON structure")
+                    print("JSON is not a dictionary: \(json)")
                 }
             } catch {
-                print("JSON parsing error: \(error)")
+                print("JSON parsing error: \(error.localizedDescription)\nData received: \(String(data: data, encoding: .utf8) ?? "Unable to decode data")")
             }
         }.resume()
     }
