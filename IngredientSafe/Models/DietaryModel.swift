@@ -19,18 +19,17 @@ class PreferencesModel: ObservableObject {
         DietPreference(title: "Halal", isSelected: false),
         DietPreference(title: "Peanuts Allergy", isSelected: false)
     ]
+
+    /// Add a brand new preference, defaulting to not selected
+    func addCustomRestriction(_ restriction: String) {
+        let newPref = DietPreference(title: restriction, isSelected: false)
+        preferences.append(newPref)
+    }
     
-    // A simple array to store custom restrictions:
-    @Published var customRestrictions: [String] = []
-    
-    // e.g. you might add logic to toggle or add new restrictions
+    /// Toggle logic if needed
     func togglePreference(_ pref: DietPreference) {
         if let index = preferences.firstIndex(where: { $0.id == pref.id }) {
             preferences[index].isSelected.toggle()
         }
-    }
-    
-    func addCustomRestriction(_ restriction: String) {
-        customRestrictions.append(restriction)
     }
 }
