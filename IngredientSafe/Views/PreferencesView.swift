@@ -109,7 +109,7 @@ struct PreferencesView: View {
             }
             .padding()
         }
-        .navigationBarTitle("Preferences", displayMode: .inline)
+        .navigationBarTitle("", displayMode: .inline)
         .navigationBarBackButtonHidden(true)
         .navigationBarItems(leading: Button(action: {
             presentationMode.wrappedValue.dismiss()
