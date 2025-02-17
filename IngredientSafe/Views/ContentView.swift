@@ -38,3 +38,11 @@ enum Destination: Hashable {
     case preferences
     case signUp
 }
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+            .environmentObject(AuthViewModel())
+            .environmentObject(PreferencesModel())
+    }
+}
