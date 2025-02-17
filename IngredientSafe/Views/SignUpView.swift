@@ -45,7 +45,7 @@ struct SignUpView: View {
                     .autocapitalization(.none)
                     .padding()
                     .background(Theme.textInputBgColor)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.black)
                     .cornerRadius(10)
                     .keyboardType(.emailAddress)
                     
@@ -55,6 +55,7 @@ struct SignUpView: View {
                         prompt: Text("Password").foregroundStyle(Color(.gray))
                     )
                     .padding()
+                    .foregroundStyle(.black)
                     .background(Theme.textInputBgColor)
                     .cornerRadius(10)
                     
@@ -64,6 +65,7 @@ struct SignUpView: View {
                         prompt: Text("Confirm Password").foregroundStyle(Color(.gray))
                     )
                     .padding()
+                    .foregroundStyle(.black)
                     .background(Theme.textInputBgColor)
                     .cornerRadius(10)
                 }

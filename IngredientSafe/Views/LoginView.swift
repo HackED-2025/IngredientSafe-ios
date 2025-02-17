@@ -42,7 +42,7 @@ struct LoginView: View {
                         .autocapitalization(.none)
                         .padding()
                         .background(Theme.textInputBgColor)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.black)
                         .cornerRadius(10)
                         .keyboardType(.emailAddress)
 
@@ -53,6 +53,7 @@ struct LoginView: View {
                     )
                         .padding()
                         .background(Theme.textInputBgColor)
+                        .foregroundStyle(.black)
                         .cornerRadius(10)
                 }
                 .padding(.horizontal)
