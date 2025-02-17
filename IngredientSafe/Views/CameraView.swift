@@ -1,36 +1,58 @@
-import SwiftUI
 import UIKit
+import SwiftUI
 import AVFoundation
-import Vision
-import NaturalLanguage
 
-// MARK: - The UIViewController subclass
 class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     
-    // Example properties
     var captureSession = AVCaptureSession()
     var videoPreviewLayer: AVCaptureVideoPreviewLayer!
+    var previewView: UIView! // New UIView to hold the preview layer
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        // Simple example camera setup
-        captureSession.sessionPreset = .high
+        setupCameraPreview()
+        setupCameraSession()
+    }
+    
+    func setupCameraPreview() {
+        previewView = UIView()
+        previewView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(previewView)
+
+        NSLayoutConstraint.activate([
+            previewView.topAnchor.constraint(equalTo: view.topAnchor),
+            previewView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            previewView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            previewView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+
+        videoPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+        videoPreviewLayer.videoGravity = .resizeAspectFill
+        previewView.layer.addSublayer(videoPreviewLayer)
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        videoPreviewLayer.frame = previewView.bounds
+    }
+
+    func setupCameraSession() {
         guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-              let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
-              captureSession.canAddInput(videoInput)
-        else {
-            print("Could not set up camera input.")
+              let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else {
+            print("Error: Unable to access the camera")
             return
         }
-        captureSession.addInput(videoInput)
-        
+
+        if captureSession.canAddInput(videoInput) {
+            captureSession.addInput(videoInput)
+        }
+
         let videoOutput = AVCaptureVideoDataOutput()
         videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
         if captureSession.canAddOutput(videoOutput) {
             captureSession.addOutput(videoOutput)
         }
-        
+
         // Create a video preview layer
         videoPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         videoPreviewLayer.frame = view.bounds
