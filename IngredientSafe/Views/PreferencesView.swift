@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PreferencesView: View {
     @EnvironmentObject var preferencesModel: PreferencesModel
+    @Environment(\.presentationMode) var presentationMode
     @State private var customRestrictionInput: String = ""
 
     var body: some View {
@@ -78,8 +79,16 @@ struct PreferencesView: View {
             }
             .padding()
         }
-        .navigationBarTitle("", displayMode: .inline)
-        .navigationBarHidden(true)
+        .navigationBarTitle("Preferences", displayMode: .inline)
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading: Button(action: {
+           presentationMode.wrappedValue.dismiss()
+        }) {
+           Image(systemName: "chevron.left")
+               .foregroundColor(Theme.accentGreen)
+           Text("Back")
+               .foregroundColor(Theme.accentGreen)
+        })
     }
 
     private func addCustomRestriction() {
