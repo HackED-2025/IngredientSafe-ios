@@ -82,7 +82,11 @@ extension CameraContainerView {
         // Split by newline
         var lines = raw
             .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                    .replacingOccurrences(of: "^-\\s*", with: "", options: .regularExpression)
+
+            }
             .filter { !$0.isEmpty }
         
         // Attempt to parse the first line as an integer rating
