@@ -311,7 +311,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(openAIKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(openAiApiKey ?? "")", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let preferences = "User dietary preferences: Celiacs Disease, low-sugar, no dairy."
