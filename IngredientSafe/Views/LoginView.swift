@@ -33,10 +33,10 @@ struct LoginView: View {
                 Button("Login") {
                     let success = authVM.login(email: email, password: password)
                     if success {
-                        // Navigate to MainView upon successful login
+                        // Navigate to MainView
                         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                            let window = windowScene.windows.first {
-                            window.rootViewController = UIHostingController(rootView: ContentView().environmentObject(authVM))
+                            window.rootViewController = UIHostingController(rootView: MainView().environmentObject(authVM))
                             window.makeKeyAndVisible()
                         }
                     } else {
@@ -45,10 +45,8 @@ struct LoginView: View {
                 }
                 .padding()
                 
-                NavigationLink("Sign Up") {
-                    SignUpView()
-                }
-                .padding()
+                NavigationLink("Sign Up", value: Destination.signUp)
+                    .padding()
             }
         }
         .padding()

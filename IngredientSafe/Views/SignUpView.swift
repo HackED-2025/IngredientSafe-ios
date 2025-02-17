@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SignUpView: View {
     @EnvironmentObject var authVM: AuthViewModel
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     
     @State private var email = ""
     @State private var password = ""
@@ -39,7 +39,7 @@ struct SignUpView: View {
             Button("Sign Up") {
                 if password == confirmPass {
                     authVM.signUp(email: email, password: password)
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 } else {
                     showMismatch = true
                 }

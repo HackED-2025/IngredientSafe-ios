@@ -14,10 +14,20 @@ struct ContentView: View {
                             CameraContainerView()
                         case .preferences:
                             PreferencesView()
+                        case .signUp:
+                            SignUpView()
                         }
                     }
             } else {
                 LoginView()
+                    .navigationDestination(for: Destination.self) { destination in
+                        switch destination {
+                        case .signUp:
+                            SignUpView()
+                        default:
+                            EmptyView()
+                        }
+                    }
             }
         }
     }
@@ -26,4 +36,5 @@ struct ContentView: View {
 enum Destination: Hashable {
     case camera
     case preferences
+    case signUp
 }
