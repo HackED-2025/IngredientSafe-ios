@@ -33,17 +33,26 @@ struct LoginView: View {
                 
                 // 3) Input Fields
                 VStack(spacing: 16) {
-                    TextField("Email", text: $email)
+                    TextField(
+                        "Email",
+                        text: $email,
+                        prompt: Text("Email").foregroundStyle(Color(.gray))
+                    )
                         .textContentType(.emailAddress)
                         .autocapitalization(.none)
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Theme.textInputBgColor)
+                        .foregroundStyle(.red)
                         .cornerRadius(10)
                         .keyboardType(.emailAddress)
 
-                    SecureField("Password", text: $password)
+                    SecureField(
+                        "Password",
+                        text: $password,
+                        prompt: Text("Password").foregroundStyle(Color(.gray))
+                    )
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Theme.textInputBgColor)
                         .cornerRadius(10)
                 }
                 .padding(.horizontal)
