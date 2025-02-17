@@ -6,18 +6,45 @@ import NaturalLanguage
 
 // MARK: - The SwiftUI wrapper
 struct CameraTextDetectionView: UIViewControllerRepresentable {
+    /// Called when the OpenAI analysis is completed, passing the final text to SwiftUI
+    var onAnalysisCompleted: ((String) -> Void)
+    
+    /// A binding so SwiftUI can request the controller to reset scanning
+    @Binding var resetRequested: Bool
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
     func makeUIViewController(context: Context) -> CameraTextDetectionViewController {
-        return CameraTextDetectionViewController()
+        let vc = CameraTextDetectionViewController()
+        vc.onAnalysisCompleted = onAnalysisCompleted
+        return vc
     }
 
-    func updateUIViewController(_ uiViewController: CameraTextDetectionViewController, context: Context) {
-        // If you need to pass updated data from SwiftUI -> UIViewController, do it here
+    func updateUIViewController(_ uiViewController: CameraTextDetectionViewController,
+                                context: Context) {
+        // If SwiftUI sets resetRequested = true, call resetScan() in the VC
+        if resetRequested {
+            uiViewController.resetScan()
+        }
+    }
+    
+    // Acts as a bridge if needed
+    class Coordinator: NSObject {
+        var parent: CameraTextDetectionView
+        init(_ parent: CameraTextDetectionView) {
+            self.parent = parent
+        }
     }
 }
 
 // MARK: - The main UIViewController with OCR + API logic
 class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
 
+    // If you want to pass the final OpenAI text to SwiftUI
+    var onAnalysisCompleted: ((String) -> Void)?
+    
     // MARK: - Camera Session
     var captureSession = AVCaptureSession()
     var videoPreviewLayer: AVCaptureVideoPreviewLayer!
@@ -50,14 +77,24 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // If you store keys in Info.plist:
         usdaApiKey = Bundle.main.object(forInfoDictionaryKey: "USDA_API_KEY") as? String
         openAiApiKey = Bundle.main.object(forInfoDictionaryKey: "OPENAI_API_KEY") as? String
 
-        setupCameraPreview()    // setup camera preview subview
-        setupCameraSession()    // attach inputs/outputs
-        addOverlayLayer()       // add a semi‐transparent overlay except for the scanning region
-        startScanTimer()        // re‐enable text scanning once per second
+        setupCameraPreview()
+        setupCameraSession()
+        addOverlayLayer()
+        startScanTimer()
+    }
+    
+    /// Reset scanning if the user dismisses the product overlay
+    func resetScan() {
+        self.hasFoundProduct = false
+        self.waitingForAPIResponse = false
+        // Optional: Clear bounding boxes, or restart the session if you prefer
+        DispatchQueue.main.async {
+            self.boundingBoxLayer.sublayers?.forEach { $0.removeFromSuperlayer() }
+        }
+        print("Scanning has been reset.")
     }
 
     // MARK: - Preview Setup
@@ -99,7 +136,6 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
 
         let videoOutput = AVCaptureVideoDataOutput()
         videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
-
         if captureSession.canAddOutput(videoOutput) {
             captureSession.addOutput(videoOutput)
         }
@@ -119,18 +155,15 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
         DispatchQueue.global(qos: .background).async {
             self.captureSession.startRunning()
         }
-        print("CameraTextDetectionViewController set up.")
     }
 
     func startScanTimer() {
-        // Re‐enable scanning once per second
         scanTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             self.scanForText = true
         }
     }
 
     func addOverlayLayer() {
-        // Darken the whole screen except for the central scanning box
         let path = UIBezierPath(rect: view.bounds)
         let centerRect = CGRect(
             x: view.bounds.width  * scanX,
@@ -163,21 +196,17 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             return
         }
 
-        // Build a Vision request for text recognition
         let request = VNRecognizeTextRequest { request, error in
             guard let observations = request.results as? [VNRecognizedTextObservation],
                   error == nil else { return }
 
             DispatchQueue.main.async {
-                // Filter recognized text by whether it intersects our scanning box
                 let centerRect = CGRect(x: self.scanX, y: self.scanY,
                                         width: self.scanWidth, height: self.scanHeight)
                 let filteredObs = observations.filter { centerRect.intersects($0.boundingBox) }
 
-                // Draw bounding boxes
                 self.drawBoundingBoxes(filteredObs)
 
-                // Combine recognized text
                 let allText = filteredObs
                     .compactMap { $0.topCandidates(1).first?.string }
                     .joined(separator: " ")
@@ -212,7 +241,6 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     }
 
     func transformBoundingBox(_ boundingBox: CGRect) -> CGRect {
-        // Vision boundingBox is normalized and flipped; convert to our previewView coords
         let metadataRect = CGRect(
             x: boundingBox.origin.x,
             y: 1.0 - boundingBox.origin.y - boundingBox.height,
@@ -236,11 +264,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
         }
 
         URLSession.shared.dataTask(with: url) { data, response, error in
-            defer {
-                DispatchQueue.main.async {
-                    self.waitingForAPIResponse = false
-                }
-            }
+            defer { DispatchQueue.main.async { self.waitingForAPIResponse = false } }
 
             if let error = error {
                 print("API Error: \(error.localizedDescription)")
@@ -268,17 +292,13 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
                     if let match = bestMatch,
                        let matchedFood = foods.first(where: { ($0["description"] as? String) == match }),
                        let foodId = matchedFood["fdcId"] as? Int {
-                        
-                        // Prevent further scanning
+
                         self.hasFoundProduct = true
-                        
-                        // Step 2: fetch detailed nutrition info
                         self.fetchNutritionDetails(for: String(foodId), productName: match)
                     } else {
                         print("No suitable match found for text: \(rawText)")
                     }
                 }
-
             } catch {
                 print("JSON parsing error: \(error.localizedDescription)")
             }
@@ -287,7 +307,6 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
 
     // MARK: - 2) USDA Nutrition Details
     func fetchNutritionDetails(for foodId: String, productName: String) {
-        print("Food match: \(productName)")
         let detailUrlString = "https://api.nal.usda.gov/fdc/v1/food/\(foodId)?api_key=\(usdaApiKey ?? "")"
         guard let url = URL(string: detailUrlString) else {
             print("Invalid detail URL for USDA nutrition details")
@@ -311,7 +330,6 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
                     return
                 }
 
-                // Could be under "labelNutrients" or "foodNutrients"
                 var labelNutrients: [String: Any] = [:]
                 if let ln = nutritionData["labelNutrients"] as? [String: Any] {
                     labelNutrients = ln
@@ -320,7 +338,6 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
 
                 let extractedData = self.extractNutritionAndIngredients(nutrients: labelNutrients,
                                                                         ingredients: ingredients)
-                // Step 3: analyze with OpenAI
                 self.analyzeWithOpenAI(nutritionData: extractedData, productName: productName)
 
             } catch {
@@ -353,12 +370,10 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
         """
 
         let body: [String: Any] = [
-            "model": "gpt-4o-mini",  // Adjust to whichever model you're using
+            "model": "gpt-4o-mini",
             "messages": [
-                ["role": "system",
-                 "content": "You are helping me decide if a product is safe for my diet."],
-                ["role": "user",
-                 "content": prompt]
+                ["role": "system", "content": "You are helping me decide if a product is safe for my diet."],
+                ["role": "user",   "content": prompt]
             ],
             "max_tokens": 200
         ]
@@ -374,20 +389,18 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
                 return
             }
 
-            if let jsonResponse = try? JSONSerialization.jsonObject(with: data, options: []) {
-                print("OpenAI Analysis result: \(jsonResponse)")
-            } else {
-                print("Could not parse OpenAI response.")
-                if let rawStr = String(data: data, encoding: .utf8) {
-                    print("Raw response: \(rawStr)")
-                }
+            // Example: just turn the raw JSON or text into a string
+            let rawResponse = String(data: data, encoding: .utf8) ?? "No response"
+
+            DispatchQueue.main.async {
+                // Pass the entire response back up to SwiftUI
+                self.onAnalysisCompleted?(rawResponse)
             }
         }.resume()
     }
 
     // MARK: - Helper: Extract Nutrition & Ingredients
     func extractNutritionAndIngredients(nutrients: [String: Any], ingredients: String) -> [String: Any] {
-        // Common macros you might want
         let macronutrients = ["calories", "protein", "fat", "carbohydrates", "fiber", "sugars", "sodium"]
         var extracted: [String: Any] = [:]
 
@@ -409,8 +422,6 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
         var bestMatch: String? = nil
         var highestScore: Double = 0.0
 
-        print("Detected text (processed): \(processedText)")
-
         for product in productNames {
             let processedProduct = product.preprocessText()
             let productTokens = processedProduct.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
@@ -428,14 +439,9 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
                 var bestLocal = 0.0
                 for p in productTokens {
                     let sim = tokenSimilarity(t, p)
-                    if sim > bestLocal {
-                        bestLocal = sim
-                    }
+                    if sim > bestLocal { bestLocal = sim }
                 }
-                // If bestLocal > 0.7, consider it a fuzzy match
-                if bestLocal > 0.7 {
-                    matchedCount += 1
-                }
+                if bestLocal > 0.7 { matchedCount += 1 }
             }
             let fuzzyScore = Double(matchedCount) / Double(textTokens.count)
 
@@ -446,7 +452,6 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
             }
         }
 
-        // Return best match only if above threshold
         if highestScore >= similarityThreshold {
             return bestMatch
         } else {
@@ -458,7 +463,7 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
     func tokenSimilarity(_ s1: String, _ s2: String) -> Double {
         let dist = Double(levenshteinDistance(s1, s2))
         let maxLen = Double(max(s1.count, s2.count))
-        return 1.0 - (dist / maxLen) // 1 = identical, 0 = different
+        return 1.0 - (dist / maxLen)
     }
 
     func levenshteinDistance(_ s1: String, _ s2: String) -> Int {
