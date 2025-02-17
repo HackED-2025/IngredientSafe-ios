@@ -103,12 +103,11 @@ class CameraTextDetectionViewController: UIViewController, AVCaptureVideoDataOut
                 let centerRect = CGRect(x: self.scanX, y: self.scanY, width: self.scanWidth, height: self.scanHeight)
                 let filteredObservations = observations.filter { centerRect.intersects($0.boundingBox) }
                 self.drawBoundingBoxes(filteredObservations)
-                for observation in filteredObservations {
-                    if let topCandidate = observation.topCandidates(1).first {
-                        let scannedText = topCandidate.string
-                        print("Detected text: \(scannedText)")
-                        self.searchProductDatabase(for: scannedText)
-                    }
+                
+                let allText = filteredObservations.compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ")
+                if (!allText.isEmpty) {
+                    print("Detected text: \(allText)")
+                    self.searchProductDatabase(for: allText)
                 }
             }
         }
