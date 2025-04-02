@@ -1,3 +1,7 @@
+# Demo
+[![Watch the Short](https://img.youtube.com/vi/9xGArfQqRlA/0.jpg)](https://www.youtube.com/shorts/9xGArfQqRlA)
+
+
 # Grocery Product Scanning iOS App
 
 This iOS app helps users with dietary restrictions/preferences quickly get a health score using a camera scan form their phone. Users can quickly find out about complicated harmful ingredients. For instance, paprika is a spice that has the potential to be gluten contaminated, but those with Celiacs Diease may be completely unaware since it is not listed as a form of wheat, barley, or rye.
