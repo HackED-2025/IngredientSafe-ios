@@ -1,7 +1,6 @@
 # Demo
-## Click to watch
 [![Watch the Short](https://img.youtube.com/vi/9xGArfQqRlA/0.jpg)](https://www.youtube.com/shorts/9xGArfQqRlA)
-
+Click to watch
 
 
 # Grocery Product Scanning iOS App
